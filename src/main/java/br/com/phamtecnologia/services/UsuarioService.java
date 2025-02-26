@@ -13,12 +13,16 @@ import br.com.phamtecnologia.dtos.CriarUsuarioResponseDto;
 import br.com.phamtecnologia.entities.Usuario;
 import br.com.phamtecnologia.helpers.Sha1CryptoHelper;
 import br.com.phamtecnologia.repositories.UsuarioRepository;
+import br.com.phamtecnologia.security.JwtBearerSecurity;
 
 @Service
 public class UsuarioService {
 
 	@Autowired
 	UsuarioRepository usuarioRepository;
+	
+	@Autowired
+	JwtBearerSecurity jwtBearerSecurity;
 	
 	public CriarUsuarioResponseDto criarUsuario(CriarUsuarioRequestDto request) {
 
@@ -27,7 +31,7 @@ public class UsuarioService {
 		}
 		
 		Usuario usuario = new Usuario();
-		usuario.setId(UUID.randomUUID());
+		usuario.setIdUsuario(UUID.randomUUID());
 		usuario.setNome(request.getNome());
 		usuario.setEmail(request.getEmail());
 		usuario.setSenha(Sha1CryptoHelper.get(request.getSenha()));
@@ -35,7 +39,7 @@ public class UsuarioService {
 		usuarioRepository.save(usuario);
 		
 		CriarUsuarioResponseDto response = new CriarUsuarioResponseDto();
-		response.setIdUsuario(usuario.getId());
+		response.setIdUsuario(usuario.getIdUsuario());
 		response.setNome(usuario.getNome());
 		response.setEmail(usuario.getEmail());
 		response.setDataHoraCriacao(Instant.now());
@@ -43,7 +47,26 @@ public class UsuarioService {
 	}
 	
 	public AutenticarUsuarioResponseDto autenticarUsuario(AutenticarUsuarioRequestDto request) {
-		// TODO
-		return null;
+
+		Usuario usuario = usuarioRepository.find(request.getEmail(), Sha1CryptoHelper.get(request.getSenha()));
+		
+		if(usuario != null) {
+			
+			AutenticarUsuarioResponseDto response = new AutenticarUsuarioResponseDto();
+			response.setIdUsuario(usuario.getIdUsuario());
+			response.setNome(usuario.getNome());
+			response.setEmail(usuario.getEmail());
+			response.setDataHoraAcesso(Instant.now());
+			response.setDataHoraExpiracao(jwtBearerSecurity.getExpiration().toInstant());
+			response.setAccessToken(jwtBearerSecurity.getToken(usuario.getEmail())); 
+		
+			return response;
+			
+		}
+		
+		throw new IllegalArgumentException("Acesso negado. Usuário inválido.");
 	}
+	
+	
+
 }

@@ -15,7 +15,7 @@ public class Usuario {
 
 	@Id
 	@Column(name = "idusuario")
-	private UUID id; 
+	private UUID idUsuario; 
 	
 	@Column(name = "nome", length = 150, nullable = false)
 	private String nome;
